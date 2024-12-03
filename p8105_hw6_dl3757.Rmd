@@ -100,3 +100,46 @@ boot_straps %>%
 ```
 
 The 95% Confidence Interval for log(beta0 * beta1) is (1.9649, 2.0589).
+
+# Problem 2
+## (a)
+```{r message = FALSE, warning = FALSE}
+# Load and clean the dataset
+homicide_data <- read_csv("./homicide-data.csv", 
+                          na = c("NA", ".", "")) %>% 
+  janitor::clean_names() %>% 
+  mutate(city_state = str_c(city, state, sep = ", ")) %>% 
+  mutate(
+    case_solved = case_when(
+      disposition == "Closed without arrest" ~ 0,
+      disposition == "Open/No arrest" ~ 0,
+      disposition == "Closed by arrest" ~ 1)
+  ) %>%
+  filter(!city_state %in% c("Dallas, TX", "Phoenix, AZ", 
+                            "Kansas City, MO", "Tulsa, AL")) %>% 
+  filter(victim_race %in% c("White", "Black")) %>%
+  mutate(victim_age = as.numeric(victim_age))
+```
+
+## (b)
+```{r message = FALSE, warning = FALSE}
+# Clean the dataset
+baltimore_data <- homicide_data %>%
+  filter(city_state == "Baltimore, MD") %>% 
+  drop_na(case_solved, victim_age, victim_sex, victim_race)
+
+# Fit the logistic model
+logistic_model <- glm(case_solved ~ victim_age + victim_race + victim_sex, 
+                      data = baltimore_data, family = binomial()) %>% 
+  broom::tidy() %>% 
+  mutate(OR = exp(estimate), 
+         OR_lower_ci = exp(estimate - 1.96 * std.error), 
+         OR_upper_ci = exp(estimate + 1.96 * std.error)) %>% 
+  filter(term == "victim_sexMale") %>% 
+  select(term, OR, OR_lower_ci, OR_upper_ci) %>%
+  knitr::kable(digits = 4, caption = "Results")
+
+logistic_model
+```
+
+The estimated adjusted odds ratio for solving homicides, comparing male victims to female victims while keeping all other variables fixed, is 0.4255, with a 95% confidence interval of (0.3246, 0.5579).
