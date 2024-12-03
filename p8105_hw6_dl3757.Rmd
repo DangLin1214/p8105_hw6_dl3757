@@ -50,3 +50,53 @@ boot_straps <-
     ) %>% 
   select(-strap, -models)
 ```
+
+```{r message = FALSE, warning = FALSE}
+# Density plot of R-squared
+boot_straps %>%
+  ggplot(aes(x = r_squared %>% unlist())) +
+  geom_density() +
+  labs(title = "Density Plot of R-squared", 
+       x = "R-squared", 
+       y = "Density") + 
+  theme_minimal()
+```
+
+The most likely R-squared value is approximately 0.913, indicating a high proportion of variation explained by the model. The plot shows that the distribution is unimodal and approximately symmetric, with R-squared values ranging from 0.88 to 0.94. 
+
+```{r message = FALSE, warning = FALSE}
+# Density plot of log(beta0 * beta1)
+boot_straps %>%
+  ggplot(aes(x = log_beta_product %>% unlist())) +
+  geom_density() + 
+  labs(title = "Density Plot of log(beta0 * beta1)",
+    x = "log(beta0 * beta1)",
+    y = "Density") + 
+  theme_minimal()
+```
+
+The most likely value of log(beta0 * beta1) is approximately 2.00, indicating the central tendency of the distribution. The plot shows that the distribution is unimodal and approximately symmetric, with log(beta0 * beta1) values ranging from 1.94 to 2.10.
+
+```{r message = FALSE, warning = FALSE}
+# 95% Confidence Interval for R-squared
+boot_straps %>%
+  pull(r_squared) %>% 
+  unlist() %>%
+  quantile(c(0.025, 0.975), na.rm = TRUE) %>% 
+  knitr::kable(col.names = "95% Confidence Interval for R-squared", 
+               digits = 4)
+```
+
+The 95% Confidence Interval for R-squared is (0.8937, 0.9271).
+
+```{r message = FALSE, warning = FALSE}
+# 95% Confidence Interval for log(beta0 * beta1)
+boot_straps %>%
+  pull(log_beta_product) %>% 
+  unlist() %>%
+  quantile(c(0.025, 0.975), na.rm = TRUE) %>% 
+  knitr::kable(col.names = "95% Confidence Interval for log(beta0 * beta1)", 
+               digits = 4)
+```
+
+The 95% Confidence Interval for log(beta0 * beta1) is (1.9649, 2.0589).
