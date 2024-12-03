@@ -143,3 +143,47 @@ logistic_model
 ```
 
 The estimated adjusted odds ratio for solving homicides, comparing male victims to female victims while keeping all other variables fixed, is 0.4255, with a 95% confidence interval of (0.3246, 0.5579).
+
+## (c)
+```{r message = FALSE, warning = FALSE}
+# Run glm for each of the cities in the dataset
+city_data <- homicide_data %>%
+  drop_na(case_solved, victim_age, victim_sex, victim_race) %>% 
+  nest(data = -city_state) %>% 
+  mutate(
+    models = map(data, \(df) glm(case_solved ~ victim_age + victim_race + victim_sex, 
+                      family = binomial(), data = df)), 
+    results = map(models, broom::tidy)) %>%
+  select(-data, -models) |> 
+  unnest(results) %>% 
+  mutate(
+    OR = exp(estimate), 
+    OR_lower_ci = exp(estimate - 1.96 * std.error), 
+    OR_upper_ci = exp(estimate + 1.96 * std.error)) %>% 
+  filter(term == "victim_sexMale") %>% 
+  select(city_state, OR, OR_lower_ci, OR_upper_ci)
+
+# Show first five cities
+city_data %>% 
+  slice(1:5) %>% 
+  knitr::kable(digits = 4)
+```
+
+## (d)
+```{r message = FALSE, warning = FALSE}
+# Odds Ratios (OR) and 95% Confidence Intervals by Cities
+city_data %>% 
+  mutate(city_state = fct_reorder(city_state, OR)) %>% 
+  ggplot(aes(x = city_state, y = OR)) + 
+  geom_point() + 
+  labs(
+    title = "Odds Ratios (OR) and 95% Confidence Intervals by Cities",
+    x = "City, State",
+    y = "Odds Ratio (OR)"
+  ) +
+  geom_errorbar(aes(ymin = OR_lower_ci, ymax = OR_upper_ci)) + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Most cities have an adjusted odds ratio smaller than 1, indicating that male victims are less likely to have their homicides solved compared to female victims in these cities. However, several cities, such as Albuquerque, NM, and Stockton, CA, have an adjusted odds ratio greater than 1. For confidence intervals that do not include 1, there is sufficient evidence to reject the null hypothesis, indicating that victim sex has a statistically significant effect on the odds of solving homicides. 
