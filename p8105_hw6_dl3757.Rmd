@@ -12,3 +12,41 @@ library(purrr)
 library(broom)
 library(modelr)
 ```
+
+# Problem 1
+```{r message = FALSE, warning = FALSE}
+# Load and clean the dataset
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+```{r message = FALSE, warning = FALSE}
+# Set seed for reproducibility
+set.seed(1)
+
+# Bootstrap
+boot_straps <- 
+  weather_df %>% 
+  modelr::bootstrap(n = 5000) %>% 
+  mutate(
+    models = map(strap, \(df) lm(tmax ~ tmin, data = df)),
+    results = map(models, broom::tidy), 
+    r_squared = map(models, \(model) broom::glance(model) %>% pull(r.squared)),
+    log_beta_product = map(models, \(model) {
+      coefs <- broom::tidy(model)
+      beta_0 <- coefs %>% filter(term == "(Intercept)") %>% pull(estimate)
+      beta_1 <- coefs %>% filter(term == "tmin") %>% pull(estimate)
+      log(beta_0 * beta_1)
+      })
+    ) %>% 
+  select(-strap, -models)
+```
