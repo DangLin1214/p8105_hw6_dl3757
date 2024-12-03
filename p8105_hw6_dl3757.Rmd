@@ -1,0 +1,14 @@
+---
+title: "p8105_hw6_dl3757"
+author: "Dang Lin dl3757"
+date: "2024-12-02"
+output: github_document
+---
+
+```{r message = FALSE, warning = FALSE}
+# Import the libraries
+library(tidyverse)
+library(purrr)
+library(broom)
+library(modelr)
+```
